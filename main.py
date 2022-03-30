@@ -18,6 +18,7 @@ def read_file():
 
     return file_lines
 
+
 def read_vertices(raw_vertices):
     vertices = {}
 
@@ -26,6 +27,7 @@ def read_vertices(raw_vertices):
         vertices[name] = tuple([float(a), float(b)])
 
     return vertices
+
 
 def read_polygons(raw_polygons):
     polygons = {}
@@ -60,6 +62,7 @@ def verify_intersection(p1, p2, p3, p4):
         vertices['endpoint'] = tuple(map(int,break_lines[2][1].split()))
         return (vertices, polygons)
 
+
 def does_intersect(a, b, c, d, p, q, r, s):
     det = (c - a) * (s - q) - (r - p) * (d - b)
     if (det == 0):
@@ -68,6 +71,7 @@ def does_intersect(a, b, c, d, p, q, r, s):
         lambda_ = ((s - q) * (r - a) + (p - r) * (s - b)) / det
         gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det
         return ((0 < lambda_ and lambda_ < 1) and (0 < gamma and gamma < 1)) * 1
+
 
 def is_visible(vertices, polygons):
     vertices_list = vertices.keys()
@@ -235,7 +239,6 @@ def bfs(vertices, graph, start, endpoint):
     return best
 
 vertices, polygons = populate_data(file_lines)
-
 visible_graph = is_visible(vertices, polygons)
 print(vertices)
 
