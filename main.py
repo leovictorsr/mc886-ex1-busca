@@ -1,4 +1,5 @@
 from itertools import groupby
+import math
 
 def read_file():
     file_lines = []
@@ -33,18 +34,20 @@ def populate_data(file_lines):
     if break_lines and len(break_lines) == 3:
         vertices = read_vertices(break_lines[0])
         polygons = read_polygons(break_lines[1])
-        start = tuple(break_lines[2][0].split())
-        endpoint = tuple(break_lines[2][1].split())
+        vertices['start'] = tuple(break_lines[2][0].split())
+        vertices['endpoint'] = tuple(break_lines[2][1].split())
 
-        return (vertices, polygons, start, endpoint)
+        return (vertices, polygons)
+
+
+def euclidian_distance(a, b):
+    distance = math.sqrt(pow(b[0] - a[0]) + pow(b[1] - a[1]))
+    return distance
+
+# def a_star(vertices, visibility_graph):
+
+
 
 
 file_lines = read_file()
 vertices, polygons, start, endpoint = populate_data(file_lines)
-
-print(vertices)
-
-print(polygons)
-
-print('Start point: ', start)
-print('End point: ', endpoint)
