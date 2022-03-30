@@ -44,10 +44,34 @@ def euclidian_distance(a, b):
     distance = math.sqrt(pow(b[0] - a[0]) + pow(b[1] - a[1]))
     return distance
 
-# def a_star(vertices, visibility_graph):
+def calculate_move(visible_to_current, current_name, acc_weight, vertices):
+    # get current vertex coordinates
+    current = vertices[current_name]
+
+    # generate a list with accumulated weights to all visible vertices
+    weights = visible_to_current.map(lambda x: acc_weight + euclidian_distance(current, x))
+
+    # git minimum accumulated value, its index and its label
+    min_weight = min(weights)
+    index_min_weight = min(range(len(weights)), key=weights.__getitem__)
+    selected_vertex = visible_to_current[index_min_weight]
+
+    return selected_vertex, min_weight
 
 
+def a_star(vertices, visibility_graph):
+    current = visibility_graph['start']
+    current_name = 'start'
+    path = '*'
+    acc_weight = 0
 
+    while (current != visibility_graph['endpoint']):
+        next_move, acc_weight = calculate_move(current, current_name, acc_weight, vertices)
+        path += next_move
+        current = visibility_graph[next_move]
+        current_name = next_move
+
+    return path
 
 file_lines = read_file()
 vertices, polygons, start, endpoint = populate_data(file_lines)
