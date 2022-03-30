@@ -1,5 +1,8 @@
 from itertools import groupby
 
+def calculate_distance(start, endpoint):
+    return abs(start[0] - endpoint[0]) + abs(start[1] - endpoint[1])
+
 def read_file():
     file_lines = []
 
