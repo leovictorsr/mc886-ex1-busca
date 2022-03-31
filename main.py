@@ -1,3 +1,5 @@
+from http.client import NotConnected
+from importlib.resources import path
 from itertools import groupby
 import math
 
@@ -141,49 +143,73 @@ def euclidian_distance(a, b):
     distance = math.sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2))
     return distance
 
-def a_star_calculate_move(visible_to_current, current_name, acc_weight, visited, vertices):
+def a_star_calculate_weights(visible_to_current, current_name, acc_weight, vertices):
     # get current vertex coordinates
     current = vertices[current_name]
 
     # generate a list with accumulated weights to all visible vertices
-    weights = list(map(
+    new_weights = list(map(
         lambda x: (x, acc_weight + euclidian_distance(current, vertices[x])),
         visible_to_current
     ))
+
+    weight_dict = {}
+    for w in new_weights:
+        weight_dict[w[0]] = {
+            'weight': w[1]
+        }
+
+    return weight_dict
+
+
+def a_star_select_lower(current_tree, current_path):
+    min_value = float('inf')
+
+    for adjacent in current_tree['adjacents']:
+        adjacent_path = current_path.copy()
+        adjacent_path.append(adjacent)
+        current_tree['adjacents'][adjacent]['path'] = adjacent_path
+
+        if 'adjacents' not in current_tree['adjacents'][adjacent]:
+            vertex = adjacent
+            value = current_tree['adjacents'][adjacent]['weight']
+            path = current_tree['adjacents'][adjacent]['path']
+        else:
+            vertex, value, path = a_star_select_lower(current_tree['adjacents'][adjacent], current_tree['adjacents'][adjacent]['path'])
+
+        if value < min_value and vertex not in current_path:
+            min_value = value
+            selected_vertex = vertex
+            selected_path = path
     
-    weights = [w for w in weights if w[0] not in visited]
+    return selected_vertex, min_value, selected_path
 
-    # get minimum accumulated weight and its vertex label
-    selected_vertex = weights[0][0]
-    min_weight = weights[0][1]
-    for weight in weights:
-        if weight == weights[0]:
-            continue
-        if weight[1] < min_weight and weight[0] not in visited:
-            selected_vertex = weight[0]
-            min_weight = weight[1]
-
-    return selected_vertex, min_weight
 
 def a_star(vertices, visibility_graph):
-    current_visible = visibility_graph['start']
-    current_label = 'start'
-    path = '*'
-    acc_weight = 0
-    visited = []
+    visible_to_current = visibility_graph['start']
+    selected_vertex = 'start'
+    weights_tree = {
+        'start': {
+            'weight': 0,
+            'path': ['start'],
+            'adjacents': {}
+        }
+    }
+    selected_path = ['start']
 
-    visited.append('start')
-    while ('endpoint' not in current_visible):
-        next_move, acc_weight = a_star_calculate_move(current_visible, current_label, acc_weight, visited, vertices)
-        path = path + next_move
-        visited.append(next_move)
-        current_visible = visibility_graph[next_move]
-        current_label = next_move
+    while ('endpoint' not in visible_to_current):
+        current_tree = weights_tree
+        for p in selected_path:
+            if p == 'start':
+                current_tree = current_tree[p]
+            else:
+                current_tree = current_tree['adjacents'][p]
 
-    acc_weight += euclidian_distance(vertices[current_label], vertices['endpoint'])
-    path += '*'
+        current_tree['adjacents'] = a_star_calculate_weights(visible_to_current, selected_vertex, current_tree['weight'], vertices)
+        selected_vertex, min_weight, selected_path = a_star_select_lower(weights_tree['start'], ['start'])
+        visible_to_current = visibility_graph[selected_vertex]
 
-    return acc_weight, path
+    return min_weight, selected_path
 
 # BFS FUNCTIONS
 def calculateDistance(start, endpoint):
@@ -245,8 +271,8 @@ print('BFS :: N. de vértices percorridos :: ', len(best) - 1)
 print()
 
 # RUN FOR A*
-total_weight, path = a_star(vertices, visible_graph)
-print('A* :: Custo total :: ', total_weight)
-print('A* :: Caminho :: ', path)
+weight, path = a_star(vertices, visible_graph)
+print('A* :: Custo total :: ', weight)
+print('A* :: Caminho :: ', ' -> '.join(path))
 print('A* :: N. de vértices percorridos :: ', len(path) - 2)
 print()
