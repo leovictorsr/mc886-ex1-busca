@@ -238,7 +238,10 @@ visible_graph = is_visible(vertices, polygons)
 
 # RUN FOR BFS
 best = bfs(vertices, visible_graph, vertices['start'], vertices['endpoint'])
-print('BFS :: Caminho percorrido :: ', ('*' + ''.join(best) + '*').replace('endpoint', ''))
+weight = costOfTheWay(best)
+print('BFS :: Custo total :: ', weight)
+print('BFS :: Caminho :: ', ('*' + ''.join(best) + '*').replace('endpoint', ''))
+print('BFS :: N. de vértices percorridos :: ', len(best) - 1)
 print()
 
 # RUN FOR A*
