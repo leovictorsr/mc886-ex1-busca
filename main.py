@@ -1,14 +1,7 @@
 from itertools import groupby
 import math
 
-def calculateDistance(start, endpoint):
-
-    return ((start[0] - endpoint[0])**2 + (start[1] - endpoint[1])**2)**0.5
-
-def calculateDistance(start, endpoint):
-
-    return ((start[0] - endpoint[0])**2 + (start[1] - endpoint[1])**2)**0.5
-
+# SETUP FUNCTIONS
 def read_file():
     file_lines = []
 
@@ -17,7 +10,6 @@ def read_file():
             file_lines.append(line.strip())
 
     return file_lines
-
 
 def read_vertices(raw_vertices):
     vertices = {}
@@ -28,7 +20,6 @@ def read_vertices(raw_vertices):
 
     return vertices
 
-
 def read_polygons(raw_polygons):
     polygons = {}
 
@@ -37,7 +28,6 @@ def read_polygons(raw_polygons):
         polygons[name] = ''.join(polygon.split()[1:])
 
     return polygons
-
 
 def populate_data(file_lines):
     break_lines = [list(group) for line, group in groupby(file_lines, key = bool) if line]
@@ -49,7 +39,7 @@ def populate_data(file_lines):
 
         return (vertices, polygons)
 
-
+# VISIBILITY FUNCTIONS
 def does_intersect(a, b, c, d, p, q, r, s):
     det = (c - a) * (s - q) - (r - p) * (d - b)
     if (det == 0):
@@ -146,6 +136,7 @@ def is_visible(vertices, polygons):
                     visible[vert] = [vertice]
     return visible
 
+# A* FUNCTIONS
 def euclidian_distance(a, b):
     distance = math.sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2))
     return distance
@@ -174,7 +165,6 @@ def a_star_calculate_move(visible_to_current, current_name, acc_weight, visited,
 
     return selected_vertex, min_weight
 
-
 def a_star(vertices, visibility_graph):
     current_visible = visibility_graph['start']
     current_label = 'start'
@@ -195,8 +185,9 @@ def a_star(vertices, visibility_graph):
 
     return acc_weight, path
 
-file_lines = read_file()
-vertices, polygons, start, endpoint = populate_data(file_lines)
+# BFS FUNCTIONS
+def calculateDistance(start, endpoint):
+    return ((start[0] - endpoint[0])**2 + (start[1] - endpoint[1])**2)**0.5
 def costOfTheWay(best):
     cost = 0
     for i in range(len(best) - 1):
@@ -208,9 +199,6 @@ def costOfTheWay(best):
     for i in range(len(best) - 1):
         cost += calculateDistance(vertices[best[i]], vertices[best[i+1]])
     return cost
-
-print('Start point: ', start)
-print('End point: ', endpoint)
 
 def bfs(vertices, graph, start, endpoint):
     visited = {}
@@ -241,11 +229,21 @@ def bfs(vertices, graph, start, endpoint):
         best.append(bestNeighbor)
     return best
 
+# READ FILE AND TREAT DATA
+file_lines = read_file()
 vertices, polygons = populate_data(file_lines)
+
+# BUILD VISIBILITY GRAPH
 visible_graph = is_visible(vertices, polygons)
 
-# Run for A*
+# RUN FOR BFS
+best = bfs(vertices, visible_graph, vertices['start'], vertices['endpoint'])
+print('BFS :: Caminho percorrido :: ', ('*' + ''.join(best) + '*').replace('endpoint', ''))
+print()
+
+# RUN FOR A*
 total_weight, path = a_star(vertices, visible_graph)
 print('A* :: Custo total :: ', total_weight)
 print('A* :: Caminho :: ', path)
 print('A* :: N. de vértices percorridos :: ', len(path) - 2)
+print()
