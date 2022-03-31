@@ -44,22 +44,9 @@ def populate_data(file_lines):
     if break_lines and len(break_lines) == 3:
         vertices = read_vertices(break_lines[0])
         polygons = read_polygons(break_lines[1])
-        vertices['start'] = tuple(break_lines[2][0].split())
-        vertices['endpoint'] = tuple(break_lines[2][1].split())
+        vertices['start'] = tuple([float(x) for x in break_lines[2][0].split()])
+        vertices['endpoint'] = tuple([float(x) for x in break_lines[2][1].split()])
 
-        return (vertices, polygons)
-
-def verify_intersection(p1, p2, p3, p4):
-    max_x = max([p1[0], p2[0]])
-    min_x = min([p1[0], p2[0]])
-    if not (min_x <= p3[0] <= max_x or min_x <= p4[0] <= max_x):
-        return 0
-    
-    max_y = max([p1[1], p2[1]])
-    min_y = min([p1[1], p2[1]])
-    if not (min_y <= p3[1] <= max_y or min_y <= p4[1] <= max_y ):
-        vertices['start'] = tuple(map(int,break_lines[2][0].split()))
-        vertices['endpoint'] = tuple(map(int,break_lines[2][1].split()))
         return (vertices, polygons)
 
 
@@ -160,37 +147,53 @@ def is_visible(vertices, polygons):
     return visible
 
 def euclidian_distance(a, b):
-    distance = math.sqrt(pow(b[0] - a[0]) + pow(b[1] - a[1]))
+    distance = math.sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2))
     return distance
 
-def calculate_move(visible_to_current, current_name, acc_weight, vertices):
+def a_star_calculate_move(visible_to_current, current_name, acc_weight, visited, vertices):
     # get current vertex coordinates
     current = vertices[current_name]
 
     # generate a list with accumulated weights to all visible vertices
-    weights = visible_to_current.map(lambda x: acc_weight + euclidian_distance(current, x))
+    weights = list(map(
+        lambda x: (x, acc_weight + euclidian_distance(current, vertices[x])),
+        visible_to_current
+    ))
+    
+    weights = [w for w in weights if w[0] not in visited]
 
-    # git minimum accumulated value, its index and its label
-    min_weight = min(weights)
-    index_min_weight = min(range(len(weights)), key=weights.__getitem__)
-    selected_vertex = visible_to_current[index_min_weight]
+    # get minimum accumulated weight and its vertex label
+    selected_vertex = weights[0][0]
+    min_weight = weights[0][1]
+    for weight in weights:
+        if weight == weights[0]:
+            continue
+        if weight[1] < min_weight and weight[0] not in visited:
+            selected_vertex = weight[0]
+            min_weight = weight[1]
 
     return selected_vertex, min_weight
 
 
 def a_star(vertices, visibility_graph):
-    current = visibility_graph['start']
-    current_name = 'start'
+    current_visible = visibility_graph['start']
+    current_label = 'start'
     path = '*'
     acc_weight = 0
+    visited = []
 
-    while (current != visibility_graph['endpoint']):
-        next_move, acc_weight = calculate_move(current, current_name, acc_weight, vertices)
-        path += next_move
-        current = visibility_graph[next_move]
-        current_name = next_move
+    visited.append('start')
+    while ('endpoint' not in current_visible):
+        next_move, acc_weight = a_star_calculate_move(current_visible, current_label, acc_weight, visited, vertices)
+        path = path + next_move
+        visited.append(next_move)
+        current_visible = visibility_graph[next_move]
+        current_label = next_move
 
-    return path
+    acc_weight += euclidian_distance(vertices[current_label], vertices['endpoint'])
+    path += '*'
+
+    return acc_weight, path
 
 file_lines = read_file()
 vertices, polygons, start, endpoint = populate_data(file_lines)
@@ -240,8 +243,9 @@ def bfs(vertices, graph, start, endpoint):
 
 vertices, polygons = populate_data(file_lines)
 visible_graph = is_visible(vertices, polygons)
-print(vertices)
 
-print(polygons)
-
-print(visible_graph)
+# Run for A*
+total_weight, path = a_star(vertices, visible_graph)
+print('A* :: Custo total :: ', total_weight)
+print('A* :: Caminho :: ', path)
+print('A* :: N. de vértices percorridos :: ', len(path) - 2)
