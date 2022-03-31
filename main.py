@@ -209,6 +209,7 @@ def a_star(vertices, visibility_graph):
         selected_vertex, min_weight, selected_path = a_star_select_lower(weights_tree['start'], ['start'])
         visible_to_current = visibility_graph[selected_vertex]
 
+    min_weight += euclidian_distance(vertices[selected_vertex], vertices['endpoint'])
     return min_weight, selected_path
 
 # BFS FUNCTIONS
@@ -273,6 +274,6 @@ print()
 # RUN FOR A*
 weight, path = a_star(vertices, visible_graph)
 print('A* :: Custo total :: ', weight)
-print('A* :: Caminho :: ', ' -> '.join(path))
-print('A* :: N. de vértices percorridos :: ', len(path) - 2)
+print('A* :: Caminho :: ', ' -> '.join(path) + ' -> endpoint')
+print('A* :: N. de vértices percorridos :: ', len(path) - 1)
 print()
