@@ -214,7 +214,7 @@ def a_star(vertices, visibility_graph):
 
 # BFS FUNCTIONS
 def calculateDistance(start, endpoint):
-    return ((start[0] - endpoint[0])**2 + (start[1] - endpoint[1])**2)**0.5
+    return (((start[0] - endpoint[0])**2) + ((start[1] - endpoint[1])**2))**0.5
 def costOfTheWay(best):
     cost = 0
     for i in range(len(best) - 1):
@@ -227,10 +227,10 @@ def costOfTheWay(best):
         cost += calculateDistance(vertices[best[i]], vertices[best[i+1]])
     return cost
 
-def bfs(vertices, graph, start, endpoint):
+def bestFirstSearch(vertices, graph, start, endpoint):
     visited = {}
     queue = []
-    best = []
+    best = ['start']
     queue.append('start')
     visited[start] = True
 
@@ -256,6 +256,39 @@ def bfs(vertices, graph, start, endpoint):
         best.append(bestNeighbor)
     return best
 
+
+def interativeDeepening(vertices, graph, start, endpoint):
+    visited = {}
+    queue = []
+    best = ['start']
+    queue.append('start')
+    visited[start] = True
+
+    while queue:
+        vertex = queue.pop(0)
+
+        if vertex == 'endpoint':
+            return best
+
+        shorterDistance = calculateDistance(start, endpoint)
+        bestNeighbor = graph[vertex][0]
+
+        for neighbor in graph[vertex]:
+            if neighbor in visited:
+                continue
+
+            distance = calculateDistance(vertices[neighbor], endpoint)
+            if distance < shorterDistance:
+                shorterDistance = distance
+                bestNeighbor = neighbor
+                visited[neighbor] = True
+        queue.append(bestNeighbor)
+        best.append(bestNeighbor)
+    return best
+
+
+
+
 # READ FILE AND TREAT DATA
 file_lines = read_file()
 vertices, polygons = populate_data(file_lines)
@@ -264,11 +297,11 @@ vertices, polygons = populate_data(file_lines)
 visible_graph = is_visible(vertices, polygons)
 
 # RUN FOR BFS
-best = bfs(vertices, visible_graph, vertices['start'], vertices['endpoint'])
+best = bestFirstSearch(vertices, visible_graph, vertices['start'], vertices['endpoint'])
 weight = costOfTheWay(best)
 print('BFS :: Custo total :: ', weight)
-print('BFS :: Caminho :: ', ('*' + ''.join(best) + '*').replace('endpoint', ''))
-print('BFS :: N. de vértices percorridos :: ', len(best) - 1)
+print('BFS :: Caminho :: ', ('*' + ' '.join(best) + '*'))
+print('BFS :: N. de vértices percorridos :: ', len(best) - 2)
 print()
 
 # RUN FOR A*
@@ -277,3 +310,40 @@ print('A* :: Custo total :: ', weight)
 print('A* :: Caminho :: ', ' -> '.join(path) + ' -> endpoint')
 print('A* :: N. de vértices percorridos :: ', len(path) - 1)
 print()
+
+
+
+
+# print(interative_deepening_search(vertices, visible_graph, vertices['start'], vertices['endpoint']))
+
+
+bestID = ['start']
+
+def DLS(src, target, maxDepth):
+  
+    if src == target: 
+        return maxDepth
+
+    if maxDepth <= 0 : return False
+
+    for i in visible_graph[src]:
+            if(DLS(i,target,maxDepth-1)):
+                bestID.append(src)
+                return maxDepth
+    return False
+
+def ID(src, target, maxDepth):
+
+    for depth in range(maxDepth):
+        if (DLS(src, target, depth)):
+            return depth
+    return False
+
+ID( 'endpoint', 'start', 8)
+
+print('ID :: Custo total :: ', costOfTheWay(bestID))
+print('ID :: Caminho :: ', ('*' + ' '.join(bestID) + '*'))
+print('ID :: N. de vértices percorridos :: ', len(bestID) - 2)
+print()
+
+print(bestID)
