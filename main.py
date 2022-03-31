@@ -5,6 +5,10 @@ def calculateDistance(start, endpoint):
 
     return ((start[0] - endpoint[0])**2 + (start[1] - endpoint[1])**2)**0.5
 
+def calculateDistance(start, endpoint):
+
+    return ((start[0] - endpoint[0])**2 + (start[1] - endpoint[1])**2)**0.5
+
 def read_file():
     file_lines = []
 
@@ -83,6 +87,12 @@ def a_star(vertices, visibility_graph):
 
 file_lines = read_file()
 vertices, polygons, start, endpoint = populate_data(file_lines)
+def costOfTheWay(best):
+    cost = 0
+    for i in range(len(best) - 1):
+        cost += calculateDistance(vertices[best[i]], vertices[best[i+1]])
+    return cost
+
 def costOfTheWay(best):
     cost = 0
     for i in range(len(best) - 1):
