@@ -1,7 +1,8 @@
 from itertools import groupby
 
-def calculate_distance(start, endpoint):
-    return abs(start[0] - endpoint[0]) + abs(start[1] - endpoint[1])
+def calculateDistance(start, endpoint):
+
+    return ((start[0] - endpoint[0])**2 + (start[1] - endpoint[1])**2)**0.5
 
 def read_file():
     file_lines = []
@@ -17,7 +18,7 @@ def read_vertices(raw_vertices):
 
     for vertex in raw_vertices:
         name, a, b = vertex.split()
-        vertices[name] = tuple([a, b])
+        vertices[name] = tuple([float(a), float(b)])
 
     return vertices
 
@@ -37,7 +38,9 @@ def populate_data(file_lines):
         vertices = read_vertices(break_lines[0])
         polygons = read_polygons(break_lines[1])
         start = tuple(break_lines[2][0].split())
+        start = tuple([float(start[0]), float(start[1])])
         endpoint = tuple(break_lines[2][1].split())
+        endpoint = tuple([float(endpoint[0]), float(endpoint[1])])
 
         return (vertices, polygons, start, endpoint)
 
@@ -49,5 +52,40 @@ print(vertices)
 
 print(polygons)
 
+def costOfTheWay(best):
+    cost = 0
+    for i in range(len(best) - 1):
+        cost += calculateDistance(vertices[best[i]], vertices[best[i+1]])
+    return cost
+
 print('Start point: ', start)
 print('End point: ', endpoint)
+
+def bfs(vertices, graph, start, endpoint):
+    visited = {}
+    queue = []
+    best = []
+    queue.append('start')
+    visited[start] = True
+
+    while queue:
+        vertex = queue.pop(0)
+
+        if vertex == 'endpoint':
+            return best
+
+        shorterDistance = calculateDistance(start, endpoint)
+        bestNeighbor = graph[vertex][0]
+
+        for neighbor in graph[vertex]:
+            if neighbor in visited:
+                continue
+
+            distance = calculateDistance(vertices[neighbor], endpoint)
+            if distance < shorterDistance:
+                shorterDistance = distance
+                bestNeighbor = neighbor
+                visited[neighbor] = True
+        queue.append(bestNeighbor)
+        best.append(bestNeighbor)
+    return best
