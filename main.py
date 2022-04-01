@@ -138,12 +138,12 @@ def is_visible(vertices, polygons):
                     visible[vert] = [vertice]
     return visible
 
-# A* FUNCTIONS
+# A* AND IDA* SHARED FUNCTIONS
 def euclidian_distance(a, b):
     distance = math.sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2))
     return distance
 
-def a_star_calculate_weights(visible_to_current, current_name, acc_weight, vertices):
+def calculate_weights(visible_to_current, current_name, acc_weight, vertices):
     # get current vertex coordinates
     current = vertices[current_name]
 
@@ -161,7 +161,7 @@ def a_star_calculate_weights(visible_to_current, current_name, acc_weight, verti
 
     return weight_dict
 
-
+# A* FUNCTIONS
 def a_star_select_lower(current_tree, current_path):
     min_value = float('inf')
 
@@ -184,7 +184,6 @@ def a_star_select_lower(current_tree, current_path):
     
     return selected_vertex, min_value, selected_path
 
-
 def a_star(vertices, visibility_graph):
     visible_to_current = visibility_graph['start']
     selected_vertex = 'start'
@@ -205,12 +204,78 @@ def a_star(vertices, visibility_graph):
             else:
                 current_tree = current_tree['adjacents'][p]
 
-        current_tree['adjacents'] = a_star_calculate_weights(visible_to_current, selected_vertex, current_tree['weight'], vertices)
+        current_tree['adjacents'] = calculate_weights(visible_to_current, selected_vertex, current_tree['weight'], vertices)
         selected_vertex, min_weight, selected_path = a_star_select_lower(weights_tree['start'], ['start'])
         visible_to_current = visibility_graph[selected_vertex]
 
     min_weight += euclidian_distance(vertices[selected_vertex], vertices['endpoint'])
     return min_weight, selected_path
+
+# IDA* FUNCTIONS
+def ida_star_estimated_cost(a, b):
+    cost = euclidian_distance([a[0], 0], [b[0], 0])
+    cost += euclidian_distance([0, a[1]], [0, b[1]])
+    return cost
+
+
+def ida_star_select_lower(current_tree, current_path, estimated_cost, ignored_paths):
+    min_value = float('inf')
+
+    for adjacent in current_tree['adjacents']:
+        adjacent_path = current_path.copy()
+        adjacent_path.append(adjacent)
+        current_tree['adjacents'][adjacent]['path'] = adjacent_path
+
+        if 'adjacents' not in current_tree['adjacents'][adjacent]:
+            vertex = adjacent
+            value = current_tree['adjacents'][adjacent]['weight']
+            path = current_tree['adjacents'][adjacent]['path']
+        else:
+            vertex, value, path = ida_star_select_lower(current_tree['adjacents'][adjacent], current_tree['adjacents'][adjacent]['path'], estimated_cost, ignored_paths)
+
+        current_estimated_cost = value + ida_star_estimated_cost(vertices[vertex], vertices['endpoint'])
+        if path in ignored_paths:
+            continue
+        if current_estimated_cost > estimated_cost:
+            ignored_paths += path
+            continue
+
+        if value < min_value and vertex not in current_path:
+            min_value = value
+            selected_vertex = vertex
+            selected_path = path
+
+    return selected_vertex, min_value, selected_path
+
+def ida_star(vertices, visibility_graph):
+    visible_to_current = visibility_graph['start']
+    selected_vertex = 'start'
+    weights_tree = {
+        'start': {
+            'weight': 0,
+            'path': ['start'],
+            'adjacents': {}
+        }
+    }
+    selected_path = ['start']
+
+    estimated_cost = ida_star_estimated_cost(vertices['start'], vertices['endpoint'])
+    while ('endpoint' not in visible_to_current):
+        current_tree = weights_tree
+        for p in selected_path:
+            if p == 'start':
+                current_tree = current_tree[p]
+            else:
+                current_tree = current_tree['adjacents'][p]
+
+        current_tree['adjacents'] = calculate_weights(visible_to_current, selected_vertex, current_tree['weight'], vertices)
+        selected_vertex, min_weight, selected_path = ida_star_select_lower(weights_tree['start'], ['start'], estimated_cost, [])
+        visible_to_current = visibility_graph[selected_vertex]
+        print(selected_vertex, min_weight, selected_path)
+
+    min_weight += euclidian_distance(vertices[selected_vertex], vertices['endpoint'])
+    return min_weight, selected_path
+
 
 # BFS FUNCTIONS
 def calculateDistance(start, endpoint):
@@ -286,32 +351,7 @@ def interativeDeepening(vertices, graph, start, endpoint):
         best.append(bestNeighbor)
     return best
 
-
-
-
-# READ FILE AND TREAT DATA
-file_lines = read_file()
-vertices, polygons = populate_data(file_lines)
-
-# BUILD VISIBILITY GRAPH
-visible_graph = is_visible(vertices, polygons)
-
-# RUN FOR BFS
-best = bestFirstSearch(vertices, visible_graph, vertices['start'], vertices['endpoint'])
-weight = costOfTheWay(best)
-print('BFS :: Custo total :: ', weight)
-print('BFS :: Caminho :: ', ('*' + ' '.join(best) + '*'))
-print('BFS :: N. de vértices percorridos :: ', len(best) - 2)
-print()
-
-# RUN FOR A*
-weight, path = a_star(vertices, visible_graph)
-print('A* :: Custo total :: ', weight)
-print('A* :: Caminho :: ', ' -> '.join(path) + ' -> endpoint')
-print('A* :: N. de vértices percorridos :: ', len(path) - 1)
-print()
-
-
+# ID FUNCTIONS
 
 
 # print(interative_deepening_search(vertices, visible_graph, vertices['start'], vertices['endpoint']))
@@ -339,11 +379,40 @@ def ID(src, target, maxDepth):
             return depth
     return False
 
-ID( 'endpoint', 'start', 8)
 
+
+# READ FILE AND TREAT DATA
+file_lines = read_file()
+vertices, polygons = populate_data(file_lines)
+
+# BUILD VISIBILITY GRAPH
+visible_graph = is_visible(vertices, polygons)
+
+# RUN FOR BFS
+best = bestFirstSearch(vertices, visible_graph, vertices['start'], vertices['endpoint'])
+weight = costOfTheWay(best)
+print('BFS :: Custo total :: ', weight)
+print('BFS :: Caminho :: ', ('*' + ' '.join(best) + '*'))
+print('BFS :: N. de vértices percorridos :: ', len(best) - 2)
+print()
+
+# RUN FOR A*
+weight, path = a_star(vertices, visible_graph)
+print('A* :: Custo total :: ', weight)
+print('A* :: Caminho :: ', ' -> '.join(path) + ' -> endpoint')
+print('A* :: N. de vértices percorridos :: ', len(path) - 1)
+print()
+
+# RUN FOR ID
+ID('endpoint', 'start', 8)
 print('ID :: Custo total :: ', costOfTheWay(bestID))
 print('ID :: Caminho :: ', ('*' + ' '.join(bestID) + '*'))
 print('ID :: N. de vértices percorridos :: ', len(bestID) - 2)
 print()
 
-print(bestID)
+# RUN FOR IDA*
+weight, path = ida_star(vertices, visible_graph)
+print('IDA* :: Custo total :: ', weight)
+print('IDA* :: Caminho :: ', ' -> '.join(path) + ' -> endpoint')
+print('IDA* :: N. de vértices percorridos :: ', len(path) - 1)
+print()
